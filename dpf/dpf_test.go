@@ -20,6 +20,23 @@ func BenchmarkEvalFull(bench *testing.B) {
 	}
 }
 
+func BenchmarkXorWords(bench *testing.B) {
+	a := new(block)
+	b := new(block)
+	c := new(block)
+	for i := 0; i < bench.N; i++ {
+		xorWords(c[:], b[:], a[:])
+	}
+}
+func BenchmarkXor16(bench *testing.B) {
+	a := new(block)
+	b := new(block)
+	c := new(block)
+	for i := 0; i < bench.N; i++ {
+		xor16(&c[0], &b[0], &a[0])
+	}
+}
+
 func TestEval(test *testing.T) {
 	logN := uint64(8)
 	alpha := uint64(123)

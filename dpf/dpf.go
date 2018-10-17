@@ -103,18 +103,18 @@ func Gen(alpha uint64, logN uint64) (DPFkey, DPFkey) {
 
 		if (alpha & (1 << (logN - 1 - i))) != 0 {
 			//KEEP = R, LOSE = L
-			xorWords(scw[:], s0L[:], s1L[:])
+			xor16(&scw[0], &s0L[0], &s1L[0])
 			tLCW := t0L ^ t1L
 			tRCW := t0R ^ t1R ^ 1
 			CW = append(CW, scw[:]...)
 			CW = append(CW, tLCW, tRCW)
 			*s0 = *s0R
 			if t0 != 0 {
-				xorWords(s0[:], s0[:], scw[:])
+				xor16(&s0[0], &s0[0], &scw[0])
 			}
 			*s1 = *s1R
 			if t1 != 0 {
-				xorWords(s1[:], s1[:], scw[:])
+				xor16(&s1[0], &s1[0], &scw[0])
 			}
 			if t0 != 0 {
 				t0 = t0R ^ tRCW
@@ -129,18 +129,18 @@ func Gen(alpha uint64, logN uint64) (DPFkey, DPFkey) {
 
 		} else {
 			//KEEP = L, LOSE = R
-			xorWords(scw[:], s0R[:], s1R[:])
+			xor16(&scw[0], &s0R[0], &s1R[0])
 			tLCW := t0L ^ t1L ^ 1
 			tRCW := t0R ^ t1R
 			CW = append(CW, scw[:]...)
 			CW = append(CW, tLCW, tRCW)
 			*s0 = *s0L
 			if t0 != 0 {
-				xorWords(s0[:], s0[:], scw[:])
+				xor16(&s0[0], &s0[0], &scw[0])
 			}
 			*s1 = *s1L
 			if t1 != 0 {
-				xorWords(s1[:], s1[:], scw[:])
+				xor16(&s1[0], &s1[0], &scw[0])
 			}
 			if t0 != 0 {
 				t0 = t0L ^ tLCW
@@ -156,7 +156,7 @@ func Gen(alpha uint64, logN uint64) (DPFkey, DPFkey) {
 	}
 	convertBlock(s0[:])
 	convertBlock(s1[:])
-	xorWords(scw[:], s0[:], s1[:])
+	xor16(&scw[0], &s0[0], &s1[0])
 	scw[(alpha&127)/8] ^= byte(1) << ((alpha&127)%8)
 	CW = append(CW, scw[:]...)
 	ka = append(ka, CW...)
@@ -182,8 +182,8 @@ func Eval(k DPFkey, x uint64, logN uint64) byte {
 			sCW := k[17 + i*18 : 17 + i*18 + 16]
 			tLCW := k[17 + i*18 + 16]
 			tRCW := k[17 + i*18 + 17]
-			xorWords(sL[:], sL[:], sCW)
-			xorWords(sR[:], sR[:], sCW)
+			xor16(&sL[0], &sL[0], &sCW[0])
+			xor16(&sR[0], &sR[0], &sCW[0])
 			tL ^= tLCW
 			tR ^= tRCW
 		}
@@ -198,7 +198,7 @@ func Eval(k DPFkey, x uint64, logN uint64) byte {
 	//fmt.Println("Debug", s, t)
 	if t != 0 {
 		convertBlock(s[:])
-		xorWords(s[:], s[:], k[len(k)-16:])
+		xor16(&s[0], &s[0], &k[len(k)-16])
 		return (s[(x&127)/8] >> ((x&127)%8)) & 1
 	} else {
 		convertBlock(s[:])
@@ -210,7 +210,7 @@ func evalFullRecursive(k DPFkey, s *block, t byte, lvl uint64, stop uint64, res 
 	if lvl == stop {
 		if t != 0 {
 			convertBlock(s[:])
-			xorWords(s[:], s[:], k[len(k)-16:])
+			xor16(&s[0], &s[0], &k[len(k)-16])
 			return append(res, s[:]...)
 		} else {
 			convertBlock(s[:])
@@ -224,8 +224,8 @@ func evalFullRecursive(k DPFkey, s *block, t byte, lvl uint64, stop uint64, res 
 		sCW := k[17 + lvl*18 : 17 + lvl*18 + 16]
 		tLCW := k[17 + lvl*18 + 16]
 		tRCW := k[17 + lvl*18 + 17]
-		xorWords(sL[:], sL[:], sCW)
-		xorWords(sR[:], sR[:], sCW)
+		xor16(&sL[0], &sL[0], &sCW[0])
+		xor16(&sR[0], &sR[0], &sCW[0])
 		tL ^= tLCW
 		tR ^= tRCW
 	}
