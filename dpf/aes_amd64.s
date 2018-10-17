@@ -4,6 +4,17 @@
 
 #include "textflag.h"
 
+// func xor16(dst, a, b *byte)
+TEXT ·xor16(SB),NOSPLIT,$0
+	MOVQ dst+0(FP), AX
+	MOVQ a+8(FP), BX
+	MOVQ b+16(FP), CX
+	MOVUPS 0(BX), X0
+	MOVUPS 0(CX), X1
+	PXOR X1, X0
+	MOVUPS X0, 0(AX)
+	RET
+
 // func encryptAes128(xk *uint32, dst, src *byte)
 TEXT ·encryptAes128(SB),NOSPLIT,$0
 	MOVQ xk+0(FP), AX

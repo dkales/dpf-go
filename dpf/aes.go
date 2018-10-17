@@ -5,6 +5,7 @@
 package dpf
 
 // defined in asm_amd64.s
+func xor16(dst, a, b *byte)
 func encryptAes128(xk *uint32, dst, src *byte)
 func expandKeyAsm(key *byte, enc *uint32)
 
@@ -13,7 +14,7 @@ type aesPrf struct {
 }
 
 func newCipher(key []byte) (*aesPrf, error) {
-	n := len(key) + 28
+	n := 11*4
 	c := aesPrf{make([]uint32, n)}
 	expandKeyAsm(&key[0], &c.enc[0])
 	return &c, nil
