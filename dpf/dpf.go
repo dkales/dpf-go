@@ -2,22 +2,22 @@ package dpf
 
 import (
 	"crypto/rand"
-	"sync"
 )
 
 type DPFkey []byte
 type block [16]byte
+
+type bytearr struct {
+	data []byte
+	index uint64
+}
 
 var prfL *aesPrf
 var prfR *aesPrf
 var keyL = make([]uint32, 11*4)
 var keyR = make([]uint32, 11*4)
 
-var blockPool = sync.Pool{
-	New : func() interface{} {
-		return new(block)
-	},
-}
+var blockStack = make([][2]*block, 63)
 
 func init() {
 	var prfkeyL = []byte{36,156,50,234,92,230,49,9,174,170,205,160,98,236,29,243}
@@ -36,6 +36,10 @@ func init() {
 	//if cpu.X86.HasSSE2 == false || cpu.X86.HasAVX2 == false {
 	//	panic("we need sse2 and avx")
 	//}
+	for i := 0; i < 63; i++ {
+		blockStack[i][0] = new(block)
+		blockStack[i][1] = new(block)
+	}
 
 }
 
@@ -44,7 +48,7 @@ func getT(in *byte) byte {
 }
 
 func clr(in *byte) {
-	*in &= 0xFE
+	*in &^= 0x1
 }
 
 func convertBlock(in []byte) {
@@ -93,12 +97,12 @@ func Gen(alpha uint64, logN uint64) (DPFkey, DPFkey) {
 	if logN >= 7 {
 		stop = logN - 7
 	}
+	s0L := new(block)
+	s0R := new(block)
+	s1L := new(block)
+	s1R := new(block)
 	for i := uint64(0); i < stop; i++ {
-		s0L := blockPool.Get().(*block)
-		s0R := blockPool.Get().(*block)
 		t0L, t0R := prg(&s0[0], &s0L[0], &s0R[0])
-		s1L := blockPool.Get().(*block)
-		s1R := blockPool.Get().(*block)
 		t1L, t1R := prg(&s1[0], &s1L[0], &s1R[0])
 
 		if (alpha & (1 << (logN - 1 - i))) != 0 {
@@ -208,18 +212,22 @@ func Eval(k DPFkey, x uint64, logN uint64) byte {
 	}
 }
 
-func evalFullRecursive(k DPFkey, s *block, t byte, lvl uint64, stop uint64, res []byte) []byte {
+func evalFullRecursive(k DPFkey, s *block, t byte, lvl uint64, stop uint64, res *bytearr) {
 	if lvl == stop {
-		encryptAes128(&keyL[0], &s[0], &s[0])
+		ss := blockStack[lvl][0]
+		*ss = *s
+		encryptAes128(&keyL[0], &ss[0], &ss[0])
 		if t != 0 {
-			xor16(&s[0], &s[0], &k[len(k)-16])
-			return append(res, s[:]...)
+			xor16(&res.data[res.index], &ss[0], &k[len(k)-16])
+			res.index += 16
 		} else {
-			return append(res, s[:]...)
+			xor16(&res.data[res.index], &ss[0], &res.data[res.index])
+			res.index += 16
 		}
+		return
 	}
-	sL := new(block) // blockPool.Get().(*block)
-	sR := new(block) // blockPool.Get().(*block)
+	sL := blockStack[lvl][0]
+	sR := blockStack[lvl][1]
 	tL, tR := prg(&s[0], &sL[0], &sR[0])
 	if t != 0 {
 		sCW := k[17 + lvl*18 : 17 + lvl*18 + 16]
@@ -230,11 +238,8 @@ func evalFullRecursive(k DPFkey, s *block, t byte, lvl uint64, stop uint64, res 
 		tL ^= tLCW
 		tR ^= tRCW
 	}
-	res = evalFullRecursive(k, sL, tL, lvl+1, stop, res)
-	res = evalFullRecursive(k, sR, tR, lvl+1, stop, res)
-	//blockPool.Put(sL)
-	//blockPool.Put(sR)
-	return res
+	evalFullRecursive(k, sL, tL, lvl+1, stop, res)
+	evalFullRecursive(k, sR, tR, lvl+1, stop, res)
 }
 
 func EvalFull(key DPFkey, logN uint64) ([]byte) {
@@ -245,5 +250,7 @@ func EvalFull(key DPFkey, logN uint64) ([]byte) {
 	if logN >= 7 {
 		stop = logN - 7
 	}
-	return evalFullRecursive(key, s, t, 0, stop, make([]byte, 0, 1 << (logN -3)))
+	var b = bytearr{ make([]byte, 1 << (logN-3)), 0 }
+	evalFullRecursive(key, s, t, 0, stop, &b)
+	return b.data
 }
