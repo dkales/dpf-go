@@ -154,8 +154,10 @@ func Gen(alpha uint64, logN uint64) (DPFkey, DPFkey) {
 			}
 		}
 	}
-	convertBlock(s0[:])
-	convertBlock(s1[:])
+	//convertBlock(s0[:])
+	encryptAes128(&keyL[0], &s0[0], &s0[0])
+	//convertBlock(s1[:])
+	encryptAes128(&keyL[0], &s1[0], &s1[0])
 	xor16(&scw[0], &s0[0], &s1[0])
 	scw[(alpha&127)/8] ^= byte(1) << ((alpha&127)%8)
 	CW = append(CW, scw[:]...)
@@ -196,29 +198,28 @@ func Eval(k DPFkey, x uint64, logN uint64) byte {
 		}
 	}
 	//fmt.Println("Debug", s, t)
+	//convertBlock(s[:])
+	encryptAes128(&keyL[0], &s[0], &s[0])
 	if t != 0 {
-		convertBlock(s[:])
 		xor16(&s[0], &s[0], &k[len(k)-16])
 		return (s[(x&127)/8] >> ((x&127)%8)) & 1
 	} else {
-		convertBlock(s[:])
 		return (s[(x&127)/8] >> ((x&127)%8)) & 1
 	}
 }
 
 func evalFullRecursive(k DPFkey, s *block, t byte, lvl uint64, stop uint64, res []byte) []byte {
 	if lvl == stop {
+		encryptAes128(&keyL[0], &s[0], &s[0])
 		if t != 0 {
-			convertBlock(s[:])
 			xor16(&s[0], &s[0], &k[len(k)-16])
 			return append(res, s[:]...)
 		} else {
-			convertBlock(s[:])
 			return append(res, s[:]...)
 		}
 	}
-	sL := new(block)//blockPool.Get().(*block)
-	sR := new(block)//blockPool.Get().(*block)
+	sL := new(block) // blockPool.Get().(*block)
+	sR := new(block) // blockPool.Get().(*block)
 	tL, tR := prg(&s[0], &sL[0], &sR[0])
 	if t != 0 {
 		sCW := k[17 + lvl*18 : 17 + lvl*18 + 16]
@@ -230,8 +231,8 @@ func evalFullRecursive(k DPFkey, s *block, t byte, lvl uint64, stop uint64, res 
 		tR ^= tRCW
 	}
 	res = evalFullRecursive(k, sL, tL, lvl+1, stop, res)
-	//blockPool.Put(sL)
 	res = evalFullRecursive(k, sR, tR, lvl+1, stop, res)
+	//blockPool.Put(sL)
 	//blockPool.Put(sR)
 	return res
 }
@@ -244,5 +245,5 @@ func EvalFull(key DPFkey, logN uint64) ([]byte) {
 	if logN >= 7 {
 		stop = logN - 7
 	}
-	return evalFullRecursive(key, s, t, 0, stop, []byte(nil))
+	return evalFullRecursive(key, s, t, 0, stop, make([]byte, 0, 1 << (logN -3)))
 }
