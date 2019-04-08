@@ -2,10 +2,10 @@
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
 
-#include "textflag.h"
+// +build amd64,!gccgo
 
 // func xor16(dst, a, b *byte)
-TEXT ·xor16(SB),NOSPLIT,$0
+TEXT ·xor16(SB),4,$0
 	MOVQ dst+0(FP), AX
 	MOVQ a+8(FP), BX
 	MOVQ b+16(FP), CX
@@ -16,7 +16,7 @@ TEXT ·xor16(SB),NOSPLIT,$0
 	RET
 
 // func encryptAes128(xk *uint32, dst, src *byte)
-TEXT ·encryptAes128(SB),NOSPLIT,$0
+TEXT ·encryptAes128(SB),4,$0
 	MOVQ xk+0(FP), AX
 	MOVQ dst+8(FP), DX
 	MOVQ src+16(FP), BX
@@ -50,7 +50,7 @@ TEXT ·encryptAes128(SB),NOSPLIT,$0
 
 // func expandKeyAsm(key *byte, enc *uint32) {
 // Note that round keys are stored in uint128 format, not uint32
-TEXT ·expandKeyAsm(SB),NOSPLIT,$0
+TEXT ·expandKeyAsm(SB),4,$0
 	MOVQ key+0(FP), AX
 	MOVQ enc+8(FP), BX
 	MOVUPS (AX), X0
@@ -80,7 +80,7 @@ TEXT ·expandKeyAsm(SB),NOSPLIT,$0
 	CALL _expand_key_128<>(SB)
 	RET
 
-TEXT _expand_key_128<>(SB),NOSPLIT,$0
+TEXT _expand_key_128<>(SB),4,$0
 	PSHUFD $0xff, X1, X1
 	SHUFPS $0x10, X0, X4
 	PXOR X4, X0

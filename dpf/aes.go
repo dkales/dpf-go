@@ -5,6 +5,7 @@
 package dpf
 
 // defined in asm_amd64.s
+// extern xor16
 func xor16(dst, a, b *byte)
 func encryptAes128(xk *uint32, dst, src *byte)
 func expandKeyAsm(key *byte, enc *uint32)

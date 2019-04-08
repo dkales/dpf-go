@@ -44,7 +44,7 @@ func TestEval(test *testing.T) {
 	for i:= uint64(0); i < (uint64(1) << logN); i++ {
 		aa := Eval(a, i, logN)
 		bb := Eval(b, i, logN)
-		if aa^bb == 1 && i != alpha {
+		if (aa^bb == 1 && i != alpha) || (aa^bb == 0 && i == alpha) {
 			test.Fail()
 		}
 	}
@@ -59,7 +59,7 @@ func TestEvalFull(test *testing.T) {
 	for i:= uint64(0); i < (uint64(1) << logN); i++ {
 		aaa := (aa[i/8] >> (i%8)) & 1
 		bbb := (bb[i/8] >> (i%8)) & 1
-		if aaa^bbb == 1 && i != alpha {
+		if (aaa^bbb == 1 && i != alpha) || (aaa^bbb == 0 && i == alpha) {
 			test.Fail()
 		}
 	}
