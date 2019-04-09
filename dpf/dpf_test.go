@@ -20,14 +20,6 @@ func BenchmarkEvalFull(bench *testing.B) {
 	}
 }
 
-func BenchmarkXorWords(bench *testing.B) {
-	a := new(block)
-	b := new(block)
-	c := new(block)
-	for i := 0; i < bench.N; i++ {
-		xorWords(c[:], b[:], a[:])
-	}
-}
 func BenchmarkXor16(bench *testing.B) {
 	a := new(block)
 	b := new(block)
