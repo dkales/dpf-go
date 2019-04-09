@@ -47,6 +47,40 @@ TEXT ·encryptAes128(SB),4,$0
 	MOVUPS X0, 0(DX)
 	RET
 
+// func aes128MMO(xk *uint32, dst, src *byte)
+TEXT ·aes128MMO(SB),4,$0
+	MOVQ xk+0(FP), AX
+	MOVQ dst+8(FP), DX
+	MOVQ src+16(FP), BX
+	MOVUPS 0(AX), X1
+	MOVUPS 0(BX), X0
+	ADDQ $16, AX
+	PXOR X1, X0
+	MOVUPS 0(AX), X1
+	AESENC X1, X0
+	MOVUPS 16(AX), X1
+	AESENC X1, X0
+	MOVUPS 32(AX), X1
+	AESENC X1, X0
+	MOVUPS 48(AX), X1
+	AESENC X1, X0
+	MOVUPS 64(AX), X1
+	AESENC X1, X0
+	MOVUPS 80(AX), X1
+	AESENC X1, X0
+	MOVUPS 96(AX), X1
+	AESENC X1, X0
+	MOVUPS 112(AX), X1
+	AESENC X1, X0
+	MOVUPS 128(AX), X1
+	AESENC X1, X0
+	MOVUPS 144(AX), X1
+	AESENCLAST X1, X0
+	MOVUPS 0(BX), X1
+	PXOR X1, X0
+	MOVUPS X0, 0(DX)
+	RET
+
 
 // func expandKeyAsm(key *byte, enc *uint32) {
 // Note that round keys are stored in uint128 format, not uint32

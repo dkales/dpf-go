@@ -5,7 +5,7 @@ import (
 )
 
 func BenchmarkEvalFull(bench *testing.B) {
-	logN := uint64(27)
+	logN := uint64(28)
 	a,_ := Gen(0, logN)
 	bench.ResetTimer()
 	//fmt.Println("Ka: ", a)

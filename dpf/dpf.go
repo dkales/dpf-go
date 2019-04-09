@@ -53,17 +53,17 @@ func clr(in *byte) {
 
 func convertBlock(in []byte) {
 	//prfL.Encrypt(in, in)
-	encryptAes128(&keyL[0], &in[0], &in[0])
+	aes128MMO(&keyL[0], &in[0], &in[0])
 }
 
 
 func prg(seed, s0, s1 *byte) (byte, byte) {
 	//prfL.Encrypt(s0, seed)
-	encryptAes128(&keyL[0], s0, seed)
+	aes128MMO(&keyL[0], s0, seed)
 	t0 := getT(s0)
 	clr(s0)
 	//prfR.Encrypt(s1, seed)
-	encryptAes128(&keyR[0], s0, seed)
+	aes128MMO(&keyR[0], s0, seed)
 	t1 := getT(s1)
 	clr(s1)
 	return t0, t1
@@ -159,9 +159,9 @@ func Gen(alpha uint64, logN uint64) (DPFkey, DPFkey) {
 		}
 	}
 	//convertBlock(s0[:])
-	encryptAes128(&keyL[0], &s0[0], &s0[0])
+	aes128MMO(&keyL[0], &s0[0], &s0[0])
 	//convertBlock(s1[:])
-	encryptAes128(&keyL[0], &s1[0], &s1[0])
+	aes128MMO(&keyL[0], &s1[0], &s1[0])
 	xor16(&scw[0], &s0[0], &s1[0])
 	scw[(alpha&127)/8] ^= byte(1) << ((alpha&127)%8)
 	CW = append(CW, scw[:]...)
@@ -203,7 +203,7 @@ func Eval(k DPFkey, x uint64, logN uint64) byte {
 	}
 	//fmt.Println("Debug", s, t)
 	//convertBlock(s[:])
-	encryptAes128(&keyL[0], &s[0], &s[0])
+	aes128MMO(&keyL[0], &s[0], &s[0])
 	if t != 0 {
 		xor16(&s[0], &s[0], &k[len(k)-16])
 		return (s[(x&127)/8] >> ((x&127)%8)) & 1
@@ -216,7 +216,7 @@ func evalFullRecursive(k DPFkey, s *block, t byte, lvl uint64, stop uint64, res 
 	if lvl == stop {
 		ss := blockStack[lvl][0]
 		*ss = *s
-		encryptAes128(&keyL[0], &ss[0], &ss[0])
+		aes128MMO(&keyL[0], &ss[0], &ss[0])
 		if t != 0 {
 			xor16(&res.data[res.index], &ss[0], &k[len(k)-16])
 			res.index += 16
@@ -242,7 +242,7 @@ func evalFullRecursive(k DPFkey, s *block, t byte, lvl uint64, stop uint64, res 
 	evalFullRecursive(k, sR, tR, lvl+1, stop, res)
 }
 
-func EvalFull(key DPFkey, logN uint64) ([]byte) {
+func EvalFull(key DPFkey, logN uint64) []byte {
 	s := new(block)
 	copy(s[:], key[:16])
 	t := key[16]

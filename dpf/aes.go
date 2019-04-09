@@ -8,6 +8,7 @@ package dpf
 // extern xor16
 func xor16(dst, a, b *byte)
 func encryptAes128(xk *uint32, dst, src *byte)
+func aes128MMO(xk *uint32, dst, src *byte)
 func expandKeyAsm(key *byte, enc *uint32)
 
 type aesPrf struct {
