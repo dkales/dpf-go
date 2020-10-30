@@ -63,7 +63,7 @@ func prg(seed, s0, s1 *byte) (byte, byte) {
 	t0 := getT(s0)
 	clr(s0)
 	//prfR.Encrypt(s1, seed)
-	aes128MMO(&keyR[0], s0, seed)
+	aes128MMO(&keyR[0], s1, seed)
 	t1 := getT(s1)
 	clr(s1)
 	return t0, t1
