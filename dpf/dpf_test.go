@@ -43,8 +43,8 @@ func TestEval(test *testing.T) {
 }
 
 func TestEvalFull(test *testing.T) {
-	logN := uint64(8)
-	alpha := uint64(123)
+	logN := uint64(9)
+	alpha := uint64(128)
 	a,b := Gen(alpha, logN)
 	aa := EvalFull(a, logN)
 	bb := EvalFull(b, logN)
