@@ -8,7 +8,7 @@ type DPFkey []byte
 type block [16]byte
 
 type bytearr struct {
-	data []byte
+	data  []byte
 	index uint64
 }
 
@@ -20,7 +20,7 @@ var keyR = make([]uint32, 11*4)
 var blockStack = make([][2]*block, 63)
 
 func init() {
-	var prfkeyL = []byte{36,156,50,234,92,230,49,9,174,170,205,160,98,236,29,243}
+	var prfkeyL = []byte{36, 156, 50, 234, 92, 230, 49, 9, 174, 170, 205, 160, 98, 236, 29, 243}
 	var prfkeyR = []byte{209, 12, 199, 173, 29, 74, 44, 128, 194, 224, 14, 44, 2, 201, 110, 28}
 	var errL, errR error
 	prfL, errL = newCipher(prfkeyL)
@@ -56,7 +56,6 @@ func convertBlock(in []byte) {
 	aes128MMO(&keyL[0], &in[0], &in[0])
 }
 
-
 func prg(seed, s0, s1 *byte) (byte, byte) {
 	//prfL.Encrypt(s0, seed)
 	aes128MMO(&keyL[0], s0, seed)
@@ -69,15 +68,14 @@ func prg(seed, s0, s1 *byte) (byte, byte) {
 	return t0, t1
 }
 
-
 func Gen(alpha uint64, logN uint64) (DPFkey, DPFkey) {
 	if alpha >= (1<<logN) || logN > 63 {
 		panic("dpf: invalid parameters")
 	}
 	var ka, kb DPFkey
 	var CW []byte
-	s0  := new(block)
-	s1  := new(block)
+	s0 := new(block)
+	s1 := new(block)
 	scw := new(block)
 	rand.Read(s0[:])
 	rand.Read(s1[:])
@@ -163,7 +161,7 @@ func Gen(alpha uint64, logN uint64) (DPFkey, DPFkey) {
 	//convertBlock(s1[:])
 	aes128MMO(&keyL[0], &s1[0], &s1[0])
 	xor16(&scw[0], &s0[0], &s1[0])
-	scw[(alpha&127)/8] ^= byte(1) << ((alpha&127)%8)
+	scw[(alpha&127)/8] ^= byte(1) << ((alpha & 127) % 8)
 	CW = append(CW, scw[:]...)
 	ka = append(ka, CW...)
 	kb = append(kb, CW...)
@@ -185,9 +183,9 @@ func Eval(k DPFkey, x uint64, logN uint64) byte {
 	for i := uint64(0); i < stop; i++ {
 		tL, tR := prg(&s[0], &sL[0], &sR[0])
 		if t != 0 {
-			sCW := k[17 + i*18 : 17 + i*18 + 16]
-			tLCW := k[17 + i*18 + 16]
-			tRCW := k[17 + i*18 + 17]
+			sCW := k[17+i*18 : 17+i*18+16]
+			tLCW := k[17+i*18+16]
+			tRCW := k[17+i*18+17]
 			xor16(&sL[0], &sL[0], &sCW[0])
 			xor16(&sR[0], &sR[0], &sCW[0])
 			tL ^= tLCW
@@ -206,9 +204,9 @@ func Eval(k DPFkey, x uint64, logN uint64) byte {
 	aes128MMO(&keyL[0], &s[0], &s[0])
 	if t != 0 {
 		xor16(&s[0], &s[0], &k[len(k)-16])
-		return (s[(x&127)/8] >> ((x&127)%8)) & 1
+		return (s[(x&127)/8] >> ((x & 127) % 8)) & 1
 	} else {
-		return (s[(x&127)/8] >> ((x&127)%8)) & 1
+		return (s[(x&127)/8] >> ((x & 127) % 8)) & 1
 	}
 }
 
@@ -230,9 +228,9 @@ func evalFullRecursive(k DPFkey, s *block, t byte, lvl uint64, stop uint64, res 
 	sR := blockStack[lvl][1]
 	tL, tR := prg(&s[0], &sL[0], &sR[0])
 	if t != 0 {
-		sCW := k[17 + lvl*18 : 17 + lvl*18 + 16]
-		tLCW := k[17 + lvl*18 + 16]
-		tRCW := k[17 + lvl*18 + 17]
+		sCW := k[17+lvl*18 : 17+lvl*18+16]
+		tLCW := k[17+lvl*18+16]
+		tRCW := k[17+lvl*18+17]
 		xor16(&sL[0], &sL[0], &sCW[0])
 		xor16(&sR[0], &sR[0], &sCW[0])
 		tL ^= tLCW
@@ -247,10 +245,13 @@ func EvalFull(key DPFkey, logN uint64) []byte {
 	copy(s[:], key[:16])
 	t := key[16]
 	stop := uint64(0)
+	buf := make([]byte, 16)
 	if logN >= 7 {
 		stop = logN - 7
+		buf = make([]byte, 1<<(logN-3))
 	}
-	var b = bytearr{ make([]byte, 1 << (logN-3)), 0 }
+
+	var b = bytearr{buf, 0}
 	evalFullRecursive(key, s, t, 0, stop, &b)
 	return b.data
 }

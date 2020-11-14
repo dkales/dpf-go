@@ -6,7 +6,7 @@ import (
 
 func BenchmarkEvalFull(bench *testing.B) {
 	logN := uint64(28)
-	a,_ := Gen(0, logN)
+	a, _ := Gen(0, logN)
 	bench.ResetTimer()
 	//fmt.Println("Ka: ", a)
 	//fmt.Println("Kb: ", b)
@@ -32,8 +32,8 @@ func BenchmarkXor16(bench *testing.B) {
 func TestEval(test *testing.T) {
 	logN := uint64(8)
 	alpha := uint64(123)
-	a,b := Gen(alpha, logN)
-	for i:= uint64(0); i < (uint64(1) << logN); i++ {
+	a, b := Gen(alpha, logN)
+	for i := uint64(0); i < (uint64(1) << logN); i++ {
 		aa := Eval(a, i, logN)
 		bb := Eval(b, i, logN)
 		if (aa^bb == 1 && i != alpha) || (aa^bb == 0 && i == alpha) {
@@ -45,12 +45,27 @@ func TestEval(test *testing.T) {
 func TestEvalFull(test *testing.T) {
 	logN := uint64(9)
 	alpha := uint64(128)
-	a,b := Gen(alpha, logN)
+	a, b := Gen(alpha, logN)
 	aa := EvalFull(a, logN)
 	bb := EvalFull(b, logN)
-	for i:= uint64(0); i < (uint64(1) << logN); i++ {
-		aaa := (aa[i/8] >> (i%8)) & 1
-		bbb := (bb[i/8] >> (i%8)) & 1
+	for i := uint64(0); i < (uint64(1) << logN); i++ {
+		aaa := (aa[i/8] >> (i % 8)) & 1
+		bbb := (bb[i/8] >> (i % 8)) & 1
+		if (aaa^bbb == 1 && i != alpha) || (aaa^bbb == 0 && i == alpha) {
+			test.Fail()
+		}
+	}
+}
+
+func TestEvalFullShort(test *testing.T) {
+	logN := uint64(3)
+	alpha := uint64(1)
+	a, b := Gen(alpha, logN)
+	aa := EvalFull(a, logN)
+	bb := EvalFull(b, logN)
+	for i := uint64(0); i < (uint64(1) << logN); i++ {
+		aaa := (aa[i/8] >> (i % 8)) & 1
+		bbb := (bb[i/8] >> (i % 8)) & 1
 		if (aaa^bbb == 1 && i != alpha) || (aaa^bbb == 0 && i == alpha) {
 			test.Fail()
 		}
