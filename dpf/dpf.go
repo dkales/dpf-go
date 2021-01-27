@@ -17,7 +17,7 @@ var prfR *aesPrf
 var keyL = make([]uint32, 11*4)
 var keyR = make([]uint32, 11*4)
 
-var blockStack = make([][2]*block, 63)
+//var blockStack = make([][2]*block, 63)
 
 func init() {
 	var prfkeyL = []byte{36, 156, 50, 234, 92, 230, 49, 9, 174, 170, 205, 160, 98, 236, 29, 243}
@@ -36,10 +36,10 @@ func init() {
 	//if cpu.X86.HasSSE2 == false || cpu.X86.HasAVX2 == false {
 	//	panic("we need sse2 and avx")
 	//}
-	for i := 0; i < 63; i++ {
-		blockStack[i][0] = new(block)
-		blockStack[i][1] = new(block)
-	}
+	// for i := 0; i < 63; i++ {
+	// 	blockStack[i][0] = new(block)
+	// 	blockStack[i][1] = new(block)
+	// }
 
 }
 
@@ -210,7 +210,7 @@ func Eval(k DPFkey, x uint64, logN uint64) byte {
 	}
 }
 
-func evalFullRecursive(k DPFkey, s *block, t byte, lvl uint64, stop uint64, res *bytearr) {
+func evalFullRecursive(blockStack [][2]*block, k DPFkey, s *block, t byte, lvl uint64, stop uint64, res *bytearr) {
 	if lvl == stop {
 		ss := blockStack[lvl][0]
 		*ss = *s
@@ -236,8 +236,8 @@ func evalFullRecursive(k DPFkey, s *block, t byte, lvl uint64, stop uint64, res 
 		tL ^= tLCW
 		tR ^= tRCW
 	}
-	evalFullRecursive(k, sL, tL, lvl+1, stop, res)
-	evalFullRecursive(k, sR, tR, lvl+1, stop, res)
+	evalFullRecursive(blockStack, k, sL, tL, lvl+1, stop, res)
+	evalFullRecursive(blockStack, k, sR, tR, lvl+1, stop, res)
 }
 
 func EvalFull(key DPFkey, logN uint64) []byte {
@@ -252,6 +252,11 @@ func EvalFull(key DPFkey, logN uint64) []byte {
 	}
 
 	var b = bytearr{buf, 0}
-	evalFullRecursive(key, s, t, 0, stop, &b)
+	var blockStack = make([][2]*block, 63)
+	for i := 0; i < 63; i++ {
+		blockStack[i][0] = new(block)
+		blockStack[i][1] = new(block)
+	}
+	evalFullRecursive(blockStack,key, s, t, 0, stop, &b)
 	return b.data
 }
